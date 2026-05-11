@@ -1,0 +1,5 @@
+.env
+*.exe
+*.test
+/bin/
+order.placed.html
