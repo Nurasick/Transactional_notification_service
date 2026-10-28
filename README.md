@@ -24,7 +24,7 @@ Every message is acknowledged manually — no message is lost silently.
 
 ## Getting started
 
-**Prerequisites:** Docker, Go 1.22+
+**Prerequisites:** Docker, Go 1.25+
 
 ### 1. Start infrastructure
 
@@ -32,7 +32,9 @@ Every message is acknowledged manually — no message is lost silently.
 docker compose up -d
 ```
 
-This starts RabbitMQ, Redis, PostgreSQL, and MinIO. PostgreSQL runs the migration automatically on first boot.
+This starts RabbitMQ, Redis, PostgreSQL, and MinIO. PostgreSQL runs the migration automatically on first boot and is exposed on host port **5433** (so it doesn't clash with a locally installed Postgres on 5432).
+
+The `minio-init` container creates the **notifications-templates** bucket and uploads every `templates/*.html` file into it. To change a template, edit the file and run `docker compose up minio-init`.
 
 ### 2. Set environment variables
 
@@ -40,11 +42,11 @@ This starts RabbitMQ, Redis, PostgreSQL, and MinIO. PostgreSQL runs the migratio
 cp .env.example .env
 ```
 
-The defaults in `.env.example` match the Docker Compose setup, so no changes needed locally.
+The defaults in `.env.example` match the Docker Compose setup, so no changes needed locally. Both binaries load `.env` from the working directory on startup; variables already set in the environment take precedence.
 
-### 3. Upload a template
+### 3. Templates
 
-Open MinIO at [http://localhost:9001](http://localhost:9001) (login: `minioadmin` / `minioadmin`), go to **notifications-templates** bucket, and upload a file named `order.placed.html`:
+Each event type needs a `<event_type>.html` template, e.g. `templates/order.placed.html`:
 
 ```
 Hello {{.UserName}},
@@ -53,7 +55,7 @@ Your order {{.OrderID}} has been placed.
 Amount: {{.Amount}}
 ```
 
-Template variables come from the `payload` field in the request.
+Template variables come from the `payload` field in the request and are case-sensitive.
 
 ### 4. Run the worker
 
@@ -85,6 +87,8 @@ curl -X POST http://localhost:8080/publish \
 
 You should see the rendered notification printed in the worker terminal.
 
+On Windows PowerShell use `curl.exe` (plain `curl` is an alias for `Invoke-WebRequest`), or import `postman_collection.json` into Postman.
+
 ### 7. Query the audit log
 
 ```bash
@@ -107,7 +111,7 @@ Unit and integration tests are included. The integration tests need a running Po
 go test ./internal/dedup/... ./internal/ratelimit/... ./internal/notification/...
 
 # All tests including integration
-POSTGRES_DSN="postgres://user:Qqwerty1!@localhost:5432/mydb?sslmode=disable" go test ./internal/...
+POSTGRES_DSN="postgres://user:Qqwerty1!@localhost:5433/mydb?sslmode=disable" go test ./internal/...
 
 # With benchmarks
 go test ./internal/ratelimit/... -bench=. -benchtime=5s
