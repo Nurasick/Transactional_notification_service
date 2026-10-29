@@ -1,8 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -25,7 +29,7 @@ type PostgresConfig struct {
 }
 
 type MinIOConfig struct {
-	Endpoint       string
+	Endpoint        string
 	AccessKey       string
 	SecretAccessKey string
 	UseSSL          bool
@@ -33,34 +37,39 @@ type MinIOConfig struct {
 }
 
 func Load() (*Config, error) {
+	// Load .env if present; real environment variables take precedence.
+	if err := godotenv.Load(); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, fmt.Errorf("load .env: %w", err)
+	}
+
 	rabbitURL, err := required("RABBITMQ_URL")
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	redisAddr, err := required("REDIS_ADDR")
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	postgresDSN, err := required("POSTGRES_DSN")
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	minioEndpoint, err := required("MINIO_ENDPOINT")
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	minioAccessKey, err := required("MINIO_ACCESS_KEY")
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	minioSecretKey, err := required("MINIO_SECRET_KEY")
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	minioUseSSL := os.Getenv("MINIO_USE_SSL") == "true"
 
 	minioBucketName, err := required("MINIO_BUCKET_NAME")
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
@@ -83,13 +92,11 @@ func Load() (*Config, error) {
 		},
 	}, nil
 
-
-
 }
 
-func required(key string)(string, error) {
+func required(key string) (string, error) {
 	v := os.Getenv(key)
-	if v ==""{
+	if v == "" {
 		return "", fmt.Errorf("missing required environment vairable: %s", key)
 	}
 	return v, nil

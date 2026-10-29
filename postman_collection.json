@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "Transactional Notification Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Publish - order.placed (happy path)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/publish",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event_type\": \"order.placed\",\n  \"user_id\": \"u123\",\n  \"payload\": {\n    \"UserName\": \"Nurali\",\n    \"OrderID\": \"ORD-42\",\n    \"Amount\": \"4500\"\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Publish - payment.received (happy path)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/publish",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event_type\": \"payment.received\",\n  \"user_id\": \"u123\",\n  \"payload\": {\n    \"UserName\": \"Nurali\",\n    \"Amount\": \"4500\",\n    \"TransactionID\": \"TX-777\"\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Publish - rate limit (run 11x in Runner)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/publish",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event_type\": \"order.placed\",\n  \"user_id\": \"rl-user\",\n  \"payload\": {\n    \"UserName\": \"Spammer\",\n    \"OrderID\": \"ORD-1\",\n    \"Amount\": \"1\"\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Publish - missing template (failed)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/publish",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event_type\": \"foo.bar\",\n  \"user_id\": \"u-fail\",\n  \"payload\": {}\n}"
+        }
+      }
+    },
+    {
+      "name": "Publish - missing user_id (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/publish",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event_type\": \"order.placed\"\n}"
+        }
+      }
+    },
+    {
+      "name": "List - by user",
+      "request": { "method": "GET", "url": "{{baseUrl}}/notifications?user_id=u123" }
+    },
+    {
+      "name": "List - by status",
+      "request": { "method": "GET", "url": "{{baseUrl}}/notifications?status=rate_limited&limit=20" }
+    },
+    {
+      "name": "List - by event type",
+      "request": { "method": "GET", "url": "{{baseUrl}}/notifications?event_type=order.placed" }
+    },
+    {
+      "name": "List - all failed",
+      "request": { "method": "GET", "url": "{{baseUrl}}/notifications?status=failed" }
+    }
+  ]
+}
