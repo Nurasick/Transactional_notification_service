@@ -60,7 +60,15 @@ type publishRequest struct {
 	Payload   map[string]any `json:"payload"`
 }
 
-func publishHandler(conn *broker.Connection) http.HandlerFunc {
+type publisher interface {
+	Publish(ctx context.Context, event broker.Event) error
+}
+
+type notificationLister interface {
+	List(ctx context.Context, f store.ListFilter) ([]store.NotificationRecord, error)
+}
+
+func publishHandler(p publisher) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -84,7 +92,7 @@ func publishHandler(conn *broker.Connection) http.HandlerFunc {
 			Payload:   req.Payload,
 		}
 
-		if err := conn.Publish(r.Context(), event); err != nil {
+		if err := p.Publish(r.Context(), event); err != nil {
 			log.Printf("[PRODUCER] publish error: %v", err)
 			http.Error(w, "failed to publish", http.StatusInternalServerError)
 			return
@@ -96,7 +104,7 @@ func publishHandler(conn *broker.Connection) http.HandlerFunc {
 	}
 }
 
-func listHandler(notifLog *store.NotificationLog) http.HandlerFunc {
+func listHandler(l notificationLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -115,7 +123,7 @@ func listHandler(notifLog *store.NotificationLog) http.HandlerFunc {
 			Offset:    offset,
 		}
 
-		records, err := notifLog.List(r.Context(), filter)
+		records, err := l.List(r.Context(), filter)
 		if err != nil {
 			log.Printf("[API] list error: %v", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)

@@ -42,15 +42,20 @@ func (s *Store) Render(ctx context.Context, eventType string, data map[string]an
 		return "", fmt.Errorf("read template %s: %w", objectName, err)
 	}
 
-	tmpl, err := template.New(eventType).Parse(string(raw))
+	return render(raw, objectName, data)
+}
+
+// Parses vals into template and render/executes the template
+func render(raw []byte, name string, data map[string]any) (string, error) {
+
+	tmpl, err := template.New(name).Parse(string(raw))
 	if err != nil {
-		return "", fmt.Errorf("parse template %s: %w", objectName, err)
+		return "", fmt.Errorf("parse template %s: %w", name, err)
 	}
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("render template %s: %w", objectName, err)
+		return "", fmt.Errorf("render template %s: %w", name, err)
 	}
-
 	return buf.String(), nil
 }
