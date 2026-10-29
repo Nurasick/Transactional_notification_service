@@ -12,13 +12,13 @@ The URL shortener part, the CV bullets and the interview talking points stay in 
 2. Write a test that **fails** because of the bug. Run it and see it fail.
 3. Make the smallest change that turns it green.
 4. Run everything:
-   ```powershell
+   ```bash
    go vet ./...
    go test -race ./...
    ```
    `-race` works on this machine (gcc from MSYS2 is on PATH).
 5. One fix per branch, conventional commit, PR into `main`:
-   ```powershell
+   ```bash
    git checkout main; git pull
    git checkout -b fix/ratelimit-sliding-window
    # ...work...
@@ -28,7 +28,7 @@ The URL shortener part, the CV bullets and the interview talking points stay in 
 
 Manual checks use the stack from `docker compose up -d` plus `go run ./cmd/worker` and `go run ./cmd/producer` (`.env` is loaded automatically). Useful side-effect viewers:
 
-```powershell
+```bash
 docker compose exec redis redis-cli MONITOR
 docker compose exec postgres psql -U user -d mydb -c "select message_id,user_id,status,error,sent_at from notifications order by sent_at desc limit 10"
 # RabbitMQ UI: http://localhost:15672  (user / Qqwerty1!)
@@ -267,7 +267,7 @@ Rate-limited messages: call `Complete` (they're finished; a redelivery shouldn't
 
 - [ ] `migrations/002_add_attempts.sql`: `ALTER TABLE notifications ADD COLUMN attempts INT NOT NULL DEFAULT 1;`. Mount it in `docker-compose.yml` next to 001. Init scripts only run on an **empty** volume, so for your existing DB either run it by hand with `psql` or `docker compose down -v` (this wipes the data).
 - [ ] Change the insert to the upsert from the original plan (`... DO UPDATE ... WHERE notifications.status <> 'sent'`).
-- [ ] Integration test (`$env:POSTGRES_DSN="postgres://user:Qqwerty1!@localhost:5433/mydb?sslmode=disable"`): insert `failed`, then `sent` → one row, status `sent`, attempts 2; then insert `failed` again → still `sent`.
+- [ ] Integration test (`POSTGRES_DSN='postgres://user:Qqwerty1!@localhost:5433/mydb?sslmode=disable' go test ./internal/store/`): insert `failed`, then `sent` → one row, status `sent`, attempts 2; then insert `failed` again → still `sent`.
 
 **Manual check for all of N2.**
 - [ ] Postman "missing template" → the message appears in `notifications.deadletter` (RabbitMQ UI), the row is `failed`, and the worker does not loop.
