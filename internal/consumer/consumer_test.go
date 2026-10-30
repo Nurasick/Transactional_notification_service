@@ -26,7 +26,7 @@ func (f *fakeAcknowledger) Nack(tag uint64, multiple, requeue bool) error {
 	return f.err
 }
 func (f *fakeAcknowledger) Reject(tag uint64, requeue bool) error {
-	f.requeue = true
+	f.requeue = requeue
 	return f.err
 }
 
@@ -50,8 +50,11 @@ func TestHandle_Success(t *testing.T) {
 		Body:         []byte(`{"event_type":"order.placed"}`),
 	}
 	disp := &fakeDispatcher{}
+
 	c := New(nil, disp)
+
 	c.handle(context.Background(), msg)
+
 	assert.True(t, ack.ackCalled)
 	assert.False(t, ack.nackCalled)
 	assert.Equal(t, "m1", disp.gotMessageID)
