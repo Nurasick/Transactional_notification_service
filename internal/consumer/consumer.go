@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/Nurasick/transactional-notification-service/internal/notification"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -12,10 +11,13 @@ const emailQueue = "notifications.email"
 
 type Consumer struct {
 	channel    *amqp.Channel
-	dispatcher *notification.Dispatcher
+	dispatcher messageHandler
+}
+type messageHandler interface {
+	Handle(ctx context.Context, messageID string, body []byte) error
 }
 
-func New(channel *amqp.Channel, dispatcher *notification.Dispatcher) *Consumer {
+func New(channel *amqp.Channel, dispatcher messageHandler) *Consumer {
 	return &Consumer{channel: channel, dispatcher: dispatcher}
 }
 

@@ -97,7 +97,7 @@ func Load() (*Config, error) {
 func required(key string) (string, error) {
 	v := os.Getenv(key)
 	if v == "" {
-		return "", fmt.Errorf("missing required environment vairable: %s", key)
+		return "", fmt.Errorf("missing required environment variable: %s", key)
 	}
 	return v, nil
 }
